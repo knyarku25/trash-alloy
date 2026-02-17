@@ -23,14 +23,12 @@ pred restore [f : File] {
   File' = File
 }
 
-/* -------- NEW OPERATION ADDED -------- */
 pred permanentDelete[f : File] {
   f in Trash                 // guard
   Trash' = Trash - f         // remove from Trash
-  File' = File - f           // remove from system entirely
+  File' = File - f           // remove from all Files
 }
 
-/* -------- TRANSITION SYSTEM UPDATED -------- */
 fact trans {
   always (
     empty
@@ -42,16 +40,17 @@ fact trans {
   )
 }
 
-/* -------- TEMPORAL PROPERTIES ADDED -------- */
-
-assert deletedStaysInTrash {
-  always (
-    all f : File |
-      (f in Trash and not after (restore[f] or permanentDelete[f]))
-      implies after (f in Trash)
+// Beginning assertion to verify permanent deletion;
+// see permanentGone for continuance of this property
+assert deletedStaysInTrash{
+  always (all f : File |
+    f not in File' implies after always (f not in File)
   )
 }
 
+// We're looking to verify that files intended to be
+// permanently gone are actually permanently gone (i.e.
+// unaffected by restore)
 assert permanentGone {
   always (
     all f : File |
